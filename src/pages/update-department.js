@@ -12,40 +12,13 @@ import { ObjectLength } from "../methods/extra-functions";
 
 import './style.css';
 const UpdateDepartmentPage = () => {
-    const treeData = [
-        {
-        value: 'CEO',
-        title: 'CEO',
-        children: [
-            {
-            value: 'CFO',
-            title: 'CFO',
-            children: [
-                {
-                value: 'Finantial analyst',
-                title: 'Finantial analyst',
-                },
-                {
-                value: 'Auditors',
-                title: 'Auditors',
-                },
-            ],
-            },
-            {
-            value: 'CMO',
-            title: 'CMO',
-            children: [
-                {
-                value: 'X',
-                title: 'X',
-                },
-            ],
-            },
-        ],
-        },
-    ];
+    const [treeData, setTreeData] = useState([]);
     useEffect(() => {
-        getTreeData({setError});
+        async function fetchData() {
+            const data = await getTreeData({setError});
+            setTreeData(data);
+        }
+        fetchData();
     }, []);
     
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,7 +118,7 @@ const UpdateDepartmentPage = () => {
                         {/* {ObjectLength(departmentData) && <p>Data exist</p>} */}
                         <Button
                             // disabled={(!formIsValid && !ObjectLength(departmentData))}
-                            // disabled={(!ObjectLength(departmentData))}
+                            disabled={(!ObjectLength(departmentData))}
                             className='self-end'
                             type="submit"
                         >
