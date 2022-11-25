@@ -94,12 +94,40 @@ export const searchDepartment = async (departmentName) => {
                     ...data[key]
                 };
             }
+            console.log(loadedDepartment);
             return loadedDepartment;
         } catch (err) {
             // setError(err.message || 'Something went wrong!');
         }
     
     return loadedDepartment;
+}
+
+// searches data just like searchDepartment() but also finds the
+// departments that are managed by this department
+export const getChildren = async (departmentName) => {
+    let loadedDepartments = [];
+    try {
+        const response = await fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments.json?orderBy="managedBy"&equalTo="${departmentName}"&print=pretty`, {
+            method: 'GET',
+        })
+        if (!response.ok) {
+            throw new Error('Request failed!');
+        }
+        const data = await response.json();
+            for(const key in data){
+                loadedDepartments.push({
+                    id: key,
+                    ...data[key]
+                });
+            }
+            console.log(loadedDepartments);
+            return loadedDepartments;
+        } catch (err) {
+            // setError(err.message || 'Something went wrong!');
+        }
+    
+    return loadedDepartments;
 }
 
 // get tree data to populate department list
@@ -186,6 +214,25 @@ export const searchDepartment = async (departmentName) => {
 //         setError(err.message || 'Something went wrong!');
 //     }
 // }
+function list_to_tree(list) {
+    var map = {}, node, roots = [], i;
+    
+    for (i = 0; i < list.length; i += 1) {
+      map[list[i].id] = i; // initialize the map
+      list[i].children = []; // initialize the children
+    }
+    
+    for (i = 0; i < list.length; i += 1) {
+      node = list[i];
+      if (node.parentId !== "0") {
+        // if you have dangling branches check that map[node.parentId] exists
+        list[map[node.parentId]].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    return roots;
+  }
 export const getTreeData = async ({setError}) => {
     try {
         const response = await fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments.json`, {
