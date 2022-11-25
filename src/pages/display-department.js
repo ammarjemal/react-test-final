@@ -1,50 +1,18 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import Card from '../UI/Card';
-import Input from '../UI/Input';
-import Spinner from '../UI/Spinner';
-import useInput from "../hooks/use-input";
 import { TreeSelect } from 'antd';
-import { updateDepartment, searchDepartment, getChildren, getTreeData } from '../methods/api';
-import Toast from '../UI/Message';
+import { searchDepartment, getChildren, getTreeData } from '../methods/api';
 import './style.css';
 import Message from '../UI/Message';
 const DisplayDepartmentPage = () => {
-    const treeData = [
-        {
-        value: 'CEO',
-        title: 'CEO',
-        children: [
-            {
-            value: 'CFO',
-            title: 'CFO',
-            children: [
-                {
-                value: 'Finantial analyst',
-                title: 'Finantial analyst',
-                },
-                {
-                value: 'Auditors',
-                title: 'Auditors',
-                },
-            ],
-            },
-            {
-            value: 'CMO',
-            title: 'CMO',
-            children: [
-                {
-                value: 'X',
-                title: 'X',
-                },
-            ],
-            },
-        ],
-        },
-    ];
+    const [treeData, setTreeData] = useState([]);
     useEffect(() => {
-        getTreeData({setError});
-    }, [])
+        async function fetchData() {
+            const data = await getTreeData({setError});
+            setTreeData(data);
+        }
+        fetchData();
+    }, []);
     
     const [showParent, setShowParent] = useState(false);
     const [showChildren, setShowChildren] = useState(false);
@@ -57,9 +25,6 @@ const DisplayDepartmentPage = () => {
         setSearchDepartmentValue(value)
         const fetchedDepartmentData = await searchDepartment(value.trim());
         const children = await getChildren(value.trim());
-        console.log({...fetchedDepartmentData,
-            children}
-        );
         setDepartmentData({
             ...fetchedDepartmentData,
             children
@@ -99,6 +64,7 @@ const DisplayDepartmentPage = () => {
                                             <span key={child.id}> : {child.departmentName}</span>
                                         ))
                                     }
+                                    {!departmentData.children.length && <span>None</span>}
                                     </li>}
                                 </li>
                                 

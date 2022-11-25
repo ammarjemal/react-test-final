@@ -19,3 +19,22 @@ export function arrayUnique() {
 
     return a;
 };
+
+export const flatListToTree = (flatList, idPath, parentIdPath, childListPath, isParent) => {
+    const rootParents = [];
+    const map = {};
+    for (const item of flatList) {
+      if (!item[childListPath]) item[childListPath] = [];
+      map[item[idPath]] = item;
+    }
+    for (const item of flatList) {
+      const parentId = item[parentIdPath];
+      if (isParent(item)) {
+        rootParents.push(item);
+      } else {
+        const parentItem = map[parentId];
+        parentItem[childListPath].push(item);
+      }
+    }
+    return rootParents;
+  };
