@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
@@ -10,42 +10,18 @@ import { addDepartment, getTreeData } from '../methods/api';
 import Message from '../UI/Message';
 import './style.css';
 const AddDepartmentPage = () => {
-  const treeData = [
-    {
-      value: 'CEO',
-      title: 'CEO',
-      children: [
-        {
-          value: 'CFO',
-          title: 'CFO',
-          children: [
-            {
-              value: 'Finantial analyst',
-              title: 'Finantial analyst',
-            },
-            {
-              value: 'Auditors',
-              title: 'Auditors',
-            },
-          ],
-        },
-        {
-          value: 'CMO',
-          title: 'CMO',
-          children: [
-            {
-              value: 'X',
-              title: 'X',
-            },
-          ],
-        },
-      ],
-    },
-  ];
-
   const [isSubmitting, setIsSubmitting]=useState(false);
   const [error, setError]=useState(null);
   const [success, setSuccess] = useState(null);
+  const [treeData, setTreeData] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+        const data = await getTreeData({setError});
+        setTreeData(data);
+    }
+    fetchData();
+  }, []);
 
   // use input is a custom hook
   const {
