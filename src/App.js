@@ -4,6 +4,7 @@ import { Route, Switch } from "react-router-dom";
 import HomePage from "./pages/home";
 import AddDepartmentPage from "./pages/add-department";
 import UpdateDepartmentPage from "./pages/update-department";
+import DeleteDepartmentPage from "./pages/delete-department";
 import DisplayDepartmentPage from "./pages/display-department";
 import DisplayTreePage from "./pages/department-tree";
 function App() {
@@ -24,6 +25,12 @@ function App() {
         <Route path="/update-department" exact>
           <Layout>
             <UpdateDepartmentPage/>
+          </Layout>
+        </Route>
+        {/* Route to delete deparment page */}
+        <Route path="/delete-department" exact>
+          <Layout>
+            <DeleteDepartmentPage/>
           </Layout>
         </Route>
         {/* Route to display a single deparment page */}

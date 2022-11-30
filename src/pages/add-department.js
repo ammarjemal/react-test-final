@@ -31,6 +31,7 @@ const AddDepartmentPage = () => {
     isInvalid: departmentNameIsInValid,
     inputChangeHandler: departmentNameChangeHandler,
     inputBlurHandler: departmentNameBlurHandler,
+    reset: departmentNameResetHandler
   } = useInput(value => value.trim() !== '');
 
   const {
@@ -39,7 +40,15 @@ const AddDepartmentPage = () => {
       isInvalid: descriptionIsInValid,
       inputChangeHandler: descriptionChangeHandler,
       inputBlurHandler: descriptionBlurHandler,
+        reset: descriptionResetHandler
   } = useInput(value => value.trim() !== '');
+
+  const resetHandler = () => {
+    // reset the three fields
+    departmentNameResetHandler();
+    descriptionResetHandler();
+    setManagedBy(null);
+  }
 
   // form is valid if department and description are valid... 
   // The submit button is enabled/disabled based on this variable
@@ -57,10 +66,12 @@ const AddDepartmentPage = () => {
     }
     if(!formIsValid){
       setError("Error occured while uploading");
+      setIsSubmitting(false);
       return;
     }
     // method found in "../methods/api"
     addDepartment(departmentData, { setError, setIsSubmitting, setSuccess });
+    resetHandler();
   }
   return (
     <Fragment>
@@ -106,12 +117,21 @@ const AddDepartmentPage = () => {
               treeData={treeData}
             />
             {/* Custom component in "../UI/Button with basic styling*/}
-            <Button
-              disabled={!formIsValid}
-              type="submit"
-            >
-              {isSubmitting ? <Spinner/> : "Submit"}
-            </Button>
+            <div className='flex justify-between w-full'>
+              <Button
+                type="reset"
+                onClick={resetHandler}
+              >
+                Reset
+              </Button>
+              <Button
+                disabled={!formIsValid}
+                type="submit"
+                btnType="default"
+              >
+                {isSubmitting ? <Spinner/> : "Submit"}
+              </Button>
+            </div>
           </form>
         </Card>
       </div>

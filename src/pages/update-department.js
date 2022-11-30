@@ -26,7 +26,8 @@ const UpdateDepartmentPage = () => {
         isInvalid: departmentNameIsInValid,
         inputChangeHandler: departmentNameChangeHandler,
         inputBlurHandler: departmentNameBlurHandler,
-      } = useInput(value => value.trim() !== '');
+        reset: departmentNameResetHandler
+    } = useInput(value => value.trim() !== '');
 
       const {
         value: description,
@@ -34,6 +35,7 @@ const UpdateDepartmentPage = () => {
         isInvalid: descriptionIsInValid,
         inputChangeHandler: descriptionChangeHandler,
         inputBlurHandler: descriptionBlurHandler,
+        reset: descriptionResetHandler
     } = useInput(value => value.trim() !== '');
 
     const formIsValid = departmentNameIsValid && descriptionIsValid;
@@ -59,10 +61,18 @@ const UpdateDepartmentPage = () => {
         departmentNameChangeHandler(fetchedDepartmentData.departmentName);
         descriptionChangeHandler(fetchedDepartmentData.description);
     }
+    const resetHandler = () => {
+        // reset the three fields
+        departmentNameResetHandler();
+        descriptionResetHandler();
+        setManagedBy(null);
+        setSearchDepartmentValue(null);
+    }
     const submitHandler = (e) => {
         e.preventDefault();
         if(!ObjectLength(departmentData)){
             setError("Cannot update department")
+            setIsSubmitting(false);
             return;
         }
         if(departmentName === '' || description === ''){
@@ -77,6 +87,7 @@ const UpdateDepartmentPage = () => {
             managedBy // parent department
         }
         updateDepartment(updatedDepartmentData, searchDepartmentValue, { setError, setIsSubmitting, setSuccess });
+        resetHandler();
     }
     return (
         <Fragment>
@@ -135,13 +146,22 @@ const UpdateDepartmentPage = () => {
                             onChange={setManagedBy}
                             treeData={treeData}
                         />
-                        <Button
-                            disabled={(!ObjectLength(departmentData) || !formIsValid)}
-                            className='self-end'
-                            type="submit"
-                        >
-                            {isSubmitting ? <Spinner/> : "Update"}
-                        </Button>
+                        <div className='flex justify-between w-full'>
+                            <Button
+                                type="reset"
+                                onClick={resetHandler}
+                            >
+                                Reset
+                            </Button>
+                            <Button
+                                disabled={(!ObjectLength(departmentData) || !formIsValid)}
+                                className='self-end'
+                                type="submit"
+                                btnType="default"
+                            >
+                                {isSubmitting ? <Spinner/> : "Update"}
+                            </Button>
+                        </div>
                     </form>
                 </Card>
             </div>

@@ -1,6 +1,6 @@
 import { flatListToTree } from "./extra-functions";
 import { db } from "../firebase";
-import { doc, getDocs, addDoc, updateDoc, collection, query, where, writeBatch } from "firebase/firestore";
+import { doc, getDocs, addDoc, updateDoc, deleteDoc, collection, query, where, writeBatch } from "firebase/firestore";
 
 // takes department data in object form
 export const addDepartment = async (departmentData, { setError, setIsSubmitting, setSuccess }) => {
@@ -32,7 +32,7 @@ export const updateDepartment = async (departmentData, searchDepartmentValue, { 
         // For example, if the department name of CEO is changed to something like CEO_UPDATED,
         // CFO, CMO, and CTO will no longer be CEO's children since their managedBy property is still CEO.
         // Therefore, updateChildren will update the managedBy property of CFO, CMO, and CTO to CEO_UPDATED
-        updateChildren(searchDepartmentValue, departmentData.departmentName, { setError, setIsSubmitting, setSuccess });
+        updateChildren(searchDepartmentValue, departmentData.departmentName, "update", { setError, setIsSubmitting, setSuccess });
 
     } catch(error) {
         setIsSubmitting(false);
@@ -41,7 +41,7 @@ export const updateDepartment = async (departmentData, searchDepartmentValue, { 
     }
 }
 
-const updateChildren = async (departmentName, newDepartmentName, { setError, setIsSubmitting, setSuccess }) => {
+const updateChildren = async (departmentName, newDepartmentName, action, { setError, setIsSubmitting, setSuccess }) => {
     // get children by the old department name
     const departments = await getChildren(departmentName, {setError});
     const batch = writeBatch(db);
@@ -51,7 +51,11 @@ const updateChildren = async (departmentName, newDepartmentName, { setError, set
         batch.update(docRef, {"managedBy": newDepartmentName});
     })
     batch.commit().then(() => {
-        setSuccess("Department updated successfully");
+        if(action === "update"){
+            setSuccess("Department updated successfully");
+        }else if(action === "delete"){
+            setSuccess("Department deleted successfully");
+        }
         setError(null);
         setIsSubmitting(false);
     })
@@ -138,3 +142,41 @@ export const getTreeData = async ({setError}) => {
         setError(error.message || 'Something went wrong!');
     }
 }
+
+export const deleteDepartment = async (departmentName, { setError, setIsSubmitting, setSuccess }) => {
+    try{
+        const { id, managedBy } = await searchDepartment(departmentName, {setError});
+        console.log(managedBy);
+        const docRef = doc(db, 'departments', id);
+        await deleteDoc(docRef);
+        
+        // We need to update the children's parent too because if a department is deleted, all its
+        // children will lose their reference to their parent.
+        // For example, if the department CEO is deleted, its children i.e CFO, CMO, and CTO 
+        // will no longer have a parent since their managedBy property is still CEO.
+        // Therefore, updateChildren will update the managedBy property of CFO, CMO, and CTO to CEO's parent
+        
+        updateChildren(departmentName, managedBy, "delete", { setError, setIsSubmitting, setSuccess });
+        
+    } catch(error) {
+        setIsSubmitting(false);
+        setError(error.message || 'Something went wrong!');
+        setSuccess(null);
+    }
+}
+
+// const deleteChildren = async (departmentName, { setError, setIsSubmitting, setSuccess }) => {
+//     // get children by the parent name
+//     const departments = await getChildren(departmentName, {setError});
+//     const batch = writeBatch(db);
+//     // iterate through the children and update their managedBy property
+//     departments.forEach(department => {
+//         const docRef = doc(db, 'departments', department.id);
+//         batch.update(docRef, {"managedBy": newDepartmentName});
+//     })
+//     batch.commit().then(() => {
+//         setSuccess("Department updated successfully");
+//         setError(null);
+//         setIsSubmitting(false);
+//     })
+// }

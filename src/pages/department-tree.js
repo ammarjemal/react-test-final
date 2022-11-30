@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Fragment, useEffect, useState } from 'react'
 import Message from '../components/UI/Message';
 import { getTreeData } from '../methods/api';
 import { Tree } from 'antd';
@@ -17,19 +17,25 @@ const DisplayTreePage = () => {
     fetchData();
   }, []);
   return (
-    <div className='flex items-center justify-center w-full h- h-screen'>
-      {/* Custom component in '../components/UI/Message' to show a success or error message*/}
-      {error && <Message type='error' show={true} message={error}/>}
-      {(!isLoading && !treeData.length) && <p>No data found</p>}
-      {/* Custom component in '../components/UI/Spinner' to show loading state*/}
-      {(isLoading && !treeData.length) && <Spinner className='w-10 h-10' type='main'/>}
-      <Tree
-        showLine={true}
-        showIcon={false}
-        treeData={treeData}
-        defaultExpandAllRows
-      />
-    </div>
+    <Fragment>
+      <h1 className='font-bold text-2xl text-center my-20'>Management Heirarchy</h1>
+      <div className='flex flex-col items-center justify-center w-full h-fit'>
+        {/* Custom component in '../components/UI/Message' to show a success or error message*/}
+        {error && <Message type='error' show={true} message={error}/>}
+        {(!isLoading && !treeData.length) && <p>No data found</p>}
+        {/* Custom component in '../components/UI/Spinner' to show loading state*/}
+        {(isLoading && !treeData.length) && <Spinner className='w-10 h-10' type='main'/>}
+        {/* <div className='text-2xl'> */}
+          <Tree
+            style={{fontSize: "1.2em"}}
+            showLine={true}
+            showIcon={false}
+            treeData={treeData}
+            defaultExpandAllRows
+            />
+        {/* </div> */}
+      </div>
+    </Fragment>
   )
 }
 
