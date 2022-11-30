@@ -2,6 +2,7 @@ import { flatListToTree, ObjectLength } from "./extra-functions";
 import { db } from "../firebase";
 import { doc, getDocs, addDoc, updateDoc, collection, query, where } from "firebase/firestore";
 
+// takes department data in object form
 export const addDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
     const departmentCollectionRef = collection(db, 'departments');
     addDoc(departmentCollectionRef, departmentData)
@@ -17,6 +18,7 @@ export const addDepartment = (departmentData, { setError, setIsSubmitting, setSu
         });
 }
 
+// takes department data in object form
 export const updateDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
     const docRef = doc(db, 'departments', departmentData.id)
     updateDoc(docRef, departmentData)
