@@ -2,7 +2,6 @@ import { flatListToTree, ObjectLength } from "./extra-functions";
 import { db } from "../firebase";
 import { doc, getDocs, addDoc, updateDoc, collection, query, where } from "firebase/firestore";
 
-// takes department data from form and makes a POST request to firebase
 export const addDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
     const departmentCollectionRef = collection(db, 'departments');
     addDoc(departmentCollectionRef, departmentData)
@@ -18,7 +17,6 @@ export const addDepartment = (departmentData, { setError, setIsSubmitting, setSu
         });
 }
 
-// takes department data from form and makes a PATCH request to firebase
 export const updateDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
     const docRef = doc(db, 'departments', departmentData.id)
     updateDoc(docRef, departmentData)
@@ -34,8 +32,6 @@ export const updateDepartment = (departmentData, { setError, setIsSubmitting, se
     });
 }
 
-// takes department name from listed departments, searches by department name,
-// and returns the whole data
 export const searchDepartment = async (departmentName, {setError}) => {
     let department = {}; // to store the returned data
     try {
@@ -55,8 +51,6 @@ export const searchDepartment = async (departmentName, {setError}) => {
     return department;
 }
 
-// searches data just like searchDepartment() but also finds the
-// departments that are managed by this department
 export const getChildren = async (departmentName, {setError}) => {
     let departments = []; // to store the returned data
     try {
