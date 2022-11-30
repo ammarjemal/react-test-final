@@ -6,6 +6,13 @@ import './style.css';
 import Message from '../UI/Message';
 const DisplayDepartmentPage = () => {
     const [treeData, setTreeData] = useState([]);
+    const [showParent, setShowParent] = useState(false);
+    const [showChildren, setShowChildren] = useState(false);
+    const [error, setError] = useState(null);
+    const [departmentData, setDepartmentData] = useState({children: []});
+    const [searchDepartmentValue, setSearchDepartmentValue] = useState(null);
+    const [childrenList, setChildrenList] = useState("");
+    
     useEffect(() => {
         async function fetchData() {
             const data = await getTreeData({setError});
@@ -13,22 +20,21 @@ const DisplayDepartmentPage = () => {
         }
         fetchData();
     }, []);
-    
-    const [showParent, setShowParent] = useState(false);
-    const [showChildren, setShowChildren] = useState(false);
-    const [error, setError] = useState(null);
-    const [departmentData, setDepartmentData] = useState({});
-    const [searchDepartmentValue, setSearchDepartmentValue] = useState(null);
-    
+
     const chooseDepartmentChangeHandler = async (value) => {
-        console.log(value);
         setSearchDepartmentValue(value)
-        const fetchedDepartmentData = await searchDepartment(value.trim());
-        const children = await getChildren(value.trim());
+        const fetchedDepartmentData = await searchDepartment(value.trim(), {setError});
+        const children = await getChildren(value.trim(), {setError});
         setDepartmentData({
             ...fetchedDepartmentData,
             children
         });
+        let childrenList = "";
+        for(let i=0; i < children.length; i++){
+            childrenList = childrenList + children[i].departmentName + " : ";
+        }
+        childrenList = childrenList.slice(0, -3);
+        setChildrenList(childrenList);
     }
     return (
         <Fragment>
@@ -53,21 +59,34 @@ const DisplayDepartmentPage = () => {
                                 <li className='mt-3'><span className='font-semibold mr-2'>Department name:</span>{departmentData.departmentName}</li>
                                 <li className='mt-3'><span className='font-semibold mr-2'>Description:</span>{departmentData.description}</li>
                                 <li className='mt-3'>
-                                    <button className='block underline' onClick={() => {setShowParent(!showParent)}}>{showParent ? "Hide" : "Show"} managing department</button>
-                                    {showParent && <li><span className='font-semibold mr-2'>Managing department:</span>{departmentData.managedBy ? departmentData.managedBy : "None"}</li>}
+                                    <span className='flex items-center font-semibold mr-2'>
+                                        Managing department:
+                                        <button className='hover:bg-slate-300 bg-slate-200 text-sm rounded-md ml-2 p-1'
+                                            onClick={() => {
+                                                setShowParent(!showParent) // opposite to previous state
+                                            }}>
+                                            {showParent ? "Hide" : "Show"}
+                                        </button>
+                                    </span>
+                                    {showParent && <span>{departmentData.managedBy ? departmentData.managedBy : "None"}</span>}
                                 </li>
                                 <li className='mt-3'>
-                                    <button className='block underline' onClick={() => {setShowChildren(!showChildren)}}>{showChildren ? "Hide" : "Show"} departments under its management</button>
-                                    {showChildren && <li><span className='font-semibold mr-2'>Departments under its management:</span>
-                                    {
-                                        departmentData.children.map(child => (
-                                            <span key={child.id}> : {child.departmentName}</span>
-                                        ))
+                                    <span className='flex items-center font-semibold mr-2'>
+                                        Departments under its management:
+                                        <button className='hover:bg-slate-300 bg-slate-200 text-sm rounded-md ml-2 p-1'
+                                            onClick={() => {
+                                                setShowChildren(!showChildren)
+                                            }}>
+                                            {showChildren ? "Hide" : "Show"}
+                                        </button>
+                                    </span>
+                                    {showChildren &&
+                                        <span>
+                                            {childrenList}
+                                            {(showChildren && !departmentData.children.length) && <span>None</span>}
+                                        </span>
                                     }
-                                    {!departmentData.children.length && <span>None</span>}
-                                    </li>}
                                 </li>
-                                
                             </ul>
                         </div>}
                 </Card>

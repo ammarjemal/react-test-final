@@ -1,170 +1,180 @@
-import { flatListToTree } from "./extra-functions";
+import { flatListToTree, ObjectLength } from "./extra-functions";
+import { db } from "../firebase";
+import { doc, getDocs, addDoc, updateDoc, collection, query, where, writeBatch } from "firebase/firestore";
 
-// takes department data from form and makes a POST request to firebase
+// takes department data in object form
 export const addDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
-    fetch('https://react-project-dff24-default-rtdb.firebaseio.com/departments.json', {
-        method: 'POST',
-        body: JSON.stringify(departmentData),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then((res) => {
-        if(res.ok){
+    const departmentCollectionRef = collection(db, 'departments');
+    addDoc(departmentCollectionRef, departmentData)
+        .then(response => {
+            setSuccess("Department inserted successfully");
             setError(null);
-            return res.json();
-        }else{
-            return res.json().then((data) => {
-            let errorMessage = 'Uploading failed!';
-            if (data && data.error && data.error.message) {
-                errorMessage = data.error.message;
-            }
-            throw new Error(errorMessage);
-            });
-        }
-    })
-    .then((data) => { // if successful
-        // history.push('/')
-        setSuccess("Department inserted successfully");
-        setError(null);
-        setIsSubmitting(false);
+            setIsSubmitting(false);
+        })
+        .catch(error => {
+            setSuccess(null);
+            setIsSubmitting(false);
+            setError(error.message || 'Something went wrong!');
+        });
+}
+
+// takes department data in object form
+export const updateDepartment = (departmentData, searchDepartmentValue, { setError, setIsSubmitting, setSuccess }) => {
+    // console.log(searchDepartmentValue);
+    const docRef = doc(db, 'departments', departmentData.id);
+    console.log(docRef);
+    updateDoc(docRef, departmentData)
+    .then(response => {
+        updateChildren(searchDepartmentValue, departmentData.departmentName, { setError, setIsSubmitting, setSuccess });
     })
     .catch((err) => {
-        setSuccess(null);
         setIsSubmitting(false);
         setError(err.message || 'Something went wrong!');
+        setSuccess(null);
     });
 }
 
-// takes department data from form and makes a PATCH request to firebase
-export const updateDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
-    fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments/${departmentData.id}.json`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-            departmentName: departmentData.departmentName,
-            description: departmentData.description,
-            managedBy: departmentData.managedBy,
-        }),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then((res) => {
-        if(res.ok){
-            setError(null);
-            return res.json();
-        }else{
-            return res.json().then((data) => {
-            let errorMessage = 'Uploading failed!';
-            if (data && data.error && data.error.message) {
-                errorMessage = data.error.message;
-            }
-            throw new Error(errorMessage);
-            });
-        }
-    })
-    .then((data) => { // if successful
-        // history.push('/')
-        setError(null);
-        setIsSubmitting(false);
-        setSuccess("Updated successfully");
-    })
-    .catch((err) => {
-        setIsSubmitting(false);
-        setError(err.message || 'Something went wrong!');
-        setSuccess(null);
-    });
+const updateChildren = async (departmentName, newDepartmentName, { setError, setIsSubmitting, setSuccess }) => {
+    console.log(departmentName);
+    console.log(newDepartmentName);
+    // const departments = await getChildren(departmentName, {setError});
+    // console.log(departments);
+    const batch = writeBatch(db);
+    // departments.forEach(department => {
+        // const docRef = doc(db, 'departments', departments.id);
+        const departmentCollectionRef = collection(db, 'departments');
+        // console.log(docRef);
+        // await updateDoc(docRef, {managedBy: departmentName})
+        departmentCollectionRef.where('managedBy', '==', departmentName).get().then(response => {
+            // let batch = firebase.firestore().batch()
+            response.docs.forEach((doc) => {
+                const docRef = departmentCollectionRef.doc(doc.id)
+                batch.update(docRef, {managedBy: newDepartmentName})
+            })
+            batch.commit().then(() => {
+                console.log(`updated all documents inside ${departmentCollectionRef}`)
+            })
+        })
+
+        // .then(response => {
+        //     console.log(response);
+        //     setError(null);
+        //     setIsSubmitting(false);
+        //     setSuccess("Updated successfully");
+        // })
+        // .catch((err) => {
+        //     setIsSubmitting(false);
+        //     setError(err.message || 'Something went wrong!');
+        //     setSuccess(null);
+        // });
+    // })
 }
 
 // takes department name from listed departments, searches by department name,
 // and returns the whole data
-export const searchDepartment = async (departmentName) => {
-    let loadedDepartment = {};
+export const searchDepartment = async (departmentName, {setError}) => {
+    let department = {}; // to store the returned data
     try {
-        const response = await fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments.json?orderBy="departmentName"&equalTo="${departmentName}"&print=pretty`, {
-            method: 'GET',
-        })
-        if (!response.ok) {
-            throw new Error('Request failed!');
-        }
-        const data = await response.json();
-            for(const key in data){
-                loadedDepartment = {
-                    id: key,
-                    ...data[key]
-                };
+        const departmentCollectionRef = collection(db, 'departments');
+        const q = query(departmentCollectionRef, where("departmentName", "==", departmentName));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            department = {
+                id: doc.id,
+                ...doc.data()
             }
-            console.log(loadedDepartment);
-            return loadedDepartment;
-        } catch (err) {
-            // setError(err.message || 'Something went wrong!');
-        }
+        });
+    } catch (err) {
+        setError(err.message || "Something went wrong")
+    }
     
-    return loadedDepartment;
+    return department;
 }
 
 // searches data just like searchDepartment() but also finds the
-// departments that are managed by this department
-export const getChildren = async (departmentName) => {
-    let loadedDepartments = [];
+// departments that are managed by this department (children)
+export const getChildren = async (departmentName, {setError}) => {
+    let departments = []; // to store the returned data
     try {
-        const response = await fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments.json?orderBy="managedBy"&equalTo="${departmentName}"&print=pretty`, {
-            method: 'GET',
-        })
-        if (!response.ok) {
-            throw new Error('Request failed!');
-        }
-        const data = await response.json();
-            for(const key in data){
-                loadedDepartments.push({
-                    id: key,
-                    ...data[key]
-                });
-            }
-            console.log(loadedDepartments);
-            return loadedDepartments;
-        } catch (err) {
-            // setError(err.message || 'Something went wrong!');
-        }
+        const departmentCollectionRef = collection(db, 'departments');
+        const q = query(departmentCollectionRef, where("managedBy", "==", departmentName));
+        
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            departments.push({
+                id: doc.id,
+                ...doc.data()
+            })
+        });
+    } catch (err) {
+        setError(err.message || "Something went wrong")
+    }
     
-    return loadedDepartments;
+    return departments;
 }
-
 
 export const getTreeData = async ({setError}) => {
-    try {
-        const response = await fetch(`https://react-project-dff24-default-rtdb.firebaseio.com/departments.json`, {
-            method: 'GET',
-        })
-        if (!response.ok) {
-            throw new Error('Request failed!');
-        }
-        const data = await response.json();
-            let loadedDepartments = [];
-            for(const key in data){
-                loadedDepartments.push({
-                    id: key,
-                    value: data[key].departmentName,
-                    title: data[key].description,
-                    parent: data[key].managedBy ? data[key].managedBy : null,
-                    parentId: null,
-                    children: []
-                });
-            }
-            loadedDepartments.forEach(department => {
-                loadedDepartments.forEach(innerDepartment => {
-                    if(department.value === innerDepartment.parent){
-                        innerDepartment.parentId = department.id;
-                    }
-                })
-            })
+    try{
+        const departmentCollectionRef = collection(db, 'departments');
+        const response = await getDocs(departmentCollectionRef);
 
-            // console.log(loadedDepartments);
-            const result = flatListToTree(loadedDepartments, "id", "parentId", "children", node => node.parentId === null);
-            console.log(result);
+        let departments = response.docs.map(doc => ({
+            id: doc.id,
+            title: doc.data().departmentName,
+            value: doc.data().departmentName,
+            parent: doc.data().managedBy ? doc.data().managedBy : null,
+            parentId: null,
+            children: []
+        }))
+        // assign parentId to each node to identify its parent
+        departments.forEach(department => {
+            departments.forEach(innerDepartment => {
+                if(department.title === innerDepartment.parent){
+                    innerDepartment.parentId = department.id;
+                }
+            })
+        })
+        // call flatListToTree (a custom function found in ./extra-functions.js) to
+        // convert the array of departments (objects) into a parent-child hierarchy (tree)
+        const result = flatListToTree(departments, "id", "parentId", "children", node => node.parentId === null);
+        console.log(result);
 
         return result;
-    }catch (err) {
-        setError(err.message || 'Something went wrong!');
+    }catch(error){
+        setError(error.message || 'Something went wrong!');
     }
 }
+
+// const treeData = [
+  //   {
+  //     value: 'CEO',
+  //     title: 'CEO',
+  //     children: [
+  //       {
+  //         value: 'CFO',
+  //         title: 'CFO',
+  //         children: [
+  //           {
+  //             value: 'Finantial analyst',
+  //             title: 'Finantial analyst',
+  //           },
+  //           {
+  //             value: 'Auditors',
+  //             title: 'Auditors',
+  //           },
+  //         ],
+  //       },
+  //       {
+  //         value: 'CMO',
+  //         title: 'CMO',
+  //         children: [
+  //           {
+  //             value: 'X',
+  //             title: 'X',
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   },
+  // ];
+  

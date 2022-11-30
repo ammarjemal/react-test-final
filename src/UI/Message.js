@@ -1,5 +1,3 @@
-import { useEffect, Fragment } from "react";
-import ReactDOM from "react-dom";
 import { XCircle, CheckCircle } from "react-bootstrap-icons";
 
 const Message = (props) => {

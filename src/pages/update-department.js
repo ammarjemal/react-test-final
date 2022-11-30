@@ -1,10 +1,8 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
 import Input from '../UI/Input';
 import Spinner from '../UI/Spinner';
-import useInput from "../hooks/use-input";
 import { TreeSelect } from 'antd';
 import { updateDepartment, searchDepartment, getTreeData } from '../methods/api';
 import Message from '../UI/Message';
@@ -13,14 +11,6 @@ import { ObjectLength } from "../methods/extra-functions";
 import './style.css';
 const UpdateDepartmentPage = () => {
     const [treeData, setTreeData] = useState([]);
-    useEffect(() => {
-        async function fetchData() {
-            const data = await getTreeData({setError});
-            setTreeData(data);
-        }
-        fetchData();
-    }, []);
-    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -31,12 +21,18 @@ const UpdateDepartmentPage = () => {
     const [managedBy, setManagedBy] = useState(null);
     const [departmentData, setDepartmentData] = useState({});
 
+    useEffect(() => {
+        async function fetchData() {
+            const data = await getTreeData({setError});
+            setTreeData(data);
+        }
+        fetchData();
+    }, []);
+    
     const chooseDepartmentChangeHandler = async (value) => {
         setSearchDepartmentValue(value);
-        const fetchedDepartmentData = await searchDepartment(value.trim());
-        if(!ObjectLength(fetchedDepartmentData)){
-            setError("No data found");
-        }
+        const fetchedDepartmentData = await searchDepartment(value.trim(),{setError});
+        
         setDepartmentData(fetchedDepartmentData);
         setDepartmentId(fetchedDepartmentData.id);
         setDepartmentName(fetchedDepartmentData.departmentName);
@@ -60,7 +56,7 @@ const UpdateDepartmentPage = () => {
             description,
             managedBy // parent department
         }
-        updateDepartment(updatedDepartmentData, { setError, setIsSubmitting, setSuccess });
+        updateDepartment(updatedDepartmentData, searchDepartmentValue, { setError, setIsSubmitting, setSuccess });
     }
     return (
         <Fragment>
@@ -115,9 +111,7 @@ const UpdateDepartmentPage = () => {
                             onChange={setManagedBy}
                             treeData={treeData}
                         />
-                        {/* {ObjectLength(departmentData) && <p>Data exist</p>} */}
                         <Button
-                            // disabled={(!formIsValid && !ObjectLength(departmentData))}
                             disabled={(!ObjectLength(departmentData))}
                             className='self-end'
                             type="submit"
