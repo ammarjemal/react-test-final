@@ -1,73 +1,60 @@
-import { flatListToTree, ObjectLength } from "./extra-functions";
+import { flatListToTree } from "./extra-functions";
 import { db } from "../firebase";
 import { doc, getDocs, addDoc, updateDoc, collection, query, where, writeBatch } from "firebase/firestore";
 
 // takes department data in object form
-export const addDepartment = (departmentData, { setError, setIsSubmitting, setSuccess }) => {
+export const addDepartment = async (departmentData, { setError, setIsSubmitting, setSuccess }) => {
+    // get the departments collection
     const departmentCollectionRef = collection(db, 'departments');
-    addDoc(departmentCollectionRef, departmentData)
-        .then(response => {
-            setSuccess("Department inserted successfully");
-            setError(null);
-            setIsSubmitting(false);
-        })
-        .catch(error => {
-            setSuccess(null);
-            setIsSubmitting(false);
-            setError(error.message || 'Something went wrong!');
-        });
+    try{
+        await addDoc(departmentCollectionRef, departmentData)
+        setSuccess("Department inserted successfully");
+        setError(null);
+        setIsSubmitting(false);
+    }catch(error){
+        setSuccess(null);
+        setIsSubmitting(false);
+        setError(error.message || 'Something went wrong!');
+    }
 }
 
 // takes department data in object form
-export const updateDepartment = (departmentData, searchDepartmentValue, { setError, setIsSubmitting, setSuccess }) => {
-    // console.log(searchDepartmentValue);
-    const docRef = doc(db, 'departments', departmentData.id);
-    console.log(docRef);
-    updateDoc(docRef, departmentData)
-    .then(response => {
+export const updateDepartment = async (departmentData, searchDepartmentValue, { setError, setIsSubmitting, setSuccess }) => {
+    try{
+        const docRef = doc(db, 'departments', departmentData.id);
+        await updateDoc(docRef, {
+            departmentName: departmentData.departmentName,
+            description: departmentData.description,
+            managedBy: departmentData.managedBy ? departmentData.managedBy : null, // assign managedBy to null if it is a root
+        })
+        // We need to update the children too because if the department name is updated, all its
+        // children will lose their reference to their parent.
+        // For example, if the department name of CEO is changed to something like CEO_UPDATED,
+        // CFO, CMO, and CTO will no longer be CEO's children since their managedBy property is still CEO.
+        // Therefore, updateChildren will update the managedBy property of CFO, CMO, and CTO to CEO_UPDATED
         updateChildren(searchDepartmentValue, departmentData.departmentName, { setError, setIsSubmitting, setSuccess });
-    })
-    .catch((err) => {
+
+    } catch(error) {
         setIsSubmitting(false);
-        setError(err.message || 'Something went wrong!');
+        setError(error.message || 'Something went wrong!');
         setSuccess(null);
-    });
+    }
 }
 
 const updateChildren = async (departmentName, newDepartmentName, { setError, setIsSubmitting, setSuccess }) => {
-    console.log(departmentName);
-    console.log(newDepartmentName);
-    // const departments = await getChildren(departmentName, {setError});
-    // console.log(departments);
+    // get children by the old department name
+    const departments = await getChildren(departmentName, {setError});
     const batch = writeBatch(db);
-    // departments.forEach(department => {
-        // const docRef = doc(db, 'departments', departments.id);
-        const departmentCollectionRef = collection(db, 'departments');
-        // console.log(docRef);
-        // await updateDoc(docRef, {managedBy: departmentName})
-        departmentCollectionRef.where('managedBy', '==', departmentName).get().then(response => {
-            // let batch = firebase.firestore().batch()
-            response.docs.forEach((doc) => {
-                const docRef = departmentCollectionRef.doc(doc.id)
-                batch.update(docRef, {managedBy: newDepartmentName})
-            })
-            batch.commit().then(() => {
-                console.log(`updated all documents inside ${departmentCollectionRef}`)
-            })
-        })
-
-        // .then(response => {
-        //     console.log(response);
-        //     setError(null);
-        //     setIsSubmitting(false);
-        //     setSuccess("Updated successfully");
-        // })
-        // .catch((err) => {
-        //     setIsSubmitting(false);
-        //     setError(err.message || 'Something went wrong!');
-        //     setSuccess(null);
-        // });
-    // })
+    // iterate through the children and update their managedBy property
+    departments.forEach(department => {
+        const docRef = doc(db, 'departments', department.id);
+        batch.update(docRef, {"managedBy": newDepartmentName});
+    })
+    batch.commit().then(() => {
+        setSuccess("Department updated successfully");
+        setError(null);
+        setIsSubmitting(false);
+    })
 }
 
 // takes department name from listed departments, searches by department name,
@@ -96,10 +83,13 @@ export const searchDepartment = async (departmentName, {setError}) => {
 export const getChildren = async (departmentName, {setError}) => {
     let departments = []; // to store the returned data
     try {
+        // get the collection reference and perform fetch documents with managedBy
+        // property of the passed departmentName
         const departmentCollectionRef = collection(db, 'departments');
         const q = query(departmentCollectionRef, where("managedBy", "==", departmentName));
         
         const querySnapshot = await getDocs(q);
+        // iterate through the fetched documents and populate the departments array
         querySnapshot.forEach((doc) => {
             departments.push({
                 id: doc.id,
@@ -115,9 +105,11 @@ export const getChildren = async (departmentName, {setError}) => {
 
 export const getTreeData = async ({setError}) => {
     try{
+        // get all departments
         const departmentCollectionRef = collection(db, 'departments');
         const response = await getDocs(departmentCollectionRef);
 
+        // iterate through the fetched documents and populate the departments array
         let departments = response.docs.map(doc => ({
             id: doc.id,
             title: doc.data().departmentName,
@@ -127,54 +119,22 @@ export const getTreeData = async ({setError}) => {
             children: []
         }))
         // assign parentId to each node to identify its parent
+        // nested for loop with a complexity of O(n^2)
+        // if a department (CFO for example) found its parent (CEO), 
+        // the parentId property of CFO is replaced with the id of CEO
         departments.forEach(department => {
             departments.forEach(innerDepartment => {
                 if(department.title === innerDepartment.parent){
                     innerDepartment.parentId = department.id;
+                    return;
                 }
             })
         })
         // call flatListToTree (a custom function found in ./extra-functions.js) to
         // convert the array of departments (objects) into a parent-child hierarchy (tree)
         const result = flatListToTree(departments, "id", "parentId", "children", node => node.parentId === null);
-        console.log(result);
-
         return result;
     }catch(error){
         setError(error.message || 'Something went wrong!');
     }
 }
-
-// const treeData = [
-  //   {
-  //     value: 'CEO',
-  //     title: 'CEO',
-  //     children: [
-  //       {
-  //         value: 'CFO',
-  //         title: 'CFO',
-  //         children: [
-  //           {
-  //             value: 'Finantial analyst',
-  //             title: 'Finantial analyst',
-  //           },
-  //           {
-  //             value: 'Auditors',
-  //             title: 'Auditors',
-  //           },
-  //         ],
-  //       },
-  //       {
-  //         value: 'CMO',
-  //         title: 'CMO',
-  //         children: [
-  //           {
-  //             value: 'X',
-  //             title: 'X',
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //   },
-  // ];
-  

@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import Layout from "./Layout/layout";
+import Layout from "./Layout/Layout";
 import { Route, Switch } from "react-router-dom";
 import HomePage from "./pages/home";
 import AddDepartmentPage from "./pages/add-department";

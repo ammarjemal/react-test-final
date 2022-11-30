@@ -1,5 +1,5 @@
 import { XCircle, CheckCircle } from "react-bootstrap-icons";
-
+// Shows success or error message
 const Message = (props) => {
     return (
         <div className='z-50 flex items-center justify-start m-auto my-3'>

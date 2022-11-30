@@ -1,13 +1,13 @@
 export default function Input({
     onChange,
-    onBlur,
+    onBlur, // used to trigger onBlur for form validation
     value,
     id,
     name,
     type,
     placeholder,
-    isInvalid,
-    className
+    isInvalid, // used to change border color
+    className // to override any styling
 }){
   return(
     <div className="my-3">

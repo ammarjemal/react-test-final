@@ -1,9 +1,9 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import Card from '../UI/Card';
+import Card from '../components/UI/Card';
 import { TreeSelect } from 'antd';
 import { searchDepartment, getChildren, getTreeData } from '../methods/api';
 import './style.css';
-import Message from '../UI/Message';
+import Message from '../components/UI/Message';
 const DisplayDepartmentPage = () => {
     const [treeData, setTreeData] = useState([]);
     const [showParent, setShowParent] = useState(false);
@@ -39,8 +39,10 @@ const DisplayDepartmentPage = () => {
     return (
         <Fragment>
             <div className='w-full h-screen flex justify-center items-center'>
+                {/* Custom component in '../components/UI/Card' used as wrapper*/}
                 <Card className='min-w-[350px]'>
                     <h1 className='text-xl font-semibold text-center my-4'>Display a Department</h1>
+                        {/* Custom component in '../components/UI/Message' to show a success or error message*/}
                         {error && <Message type='error' show={true} setState={setError} message={error}/>}
                         {/* for the user to select a department and fetch department data */}
                         <TreeSelect

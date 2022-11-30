@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import image from '../assets/employees.jpg';
-import Card from '../UI/Card';
+import Card from '../components/UI/Card';
 const HomePage = () => {
   return (
     <div className='w-full h-screen flex'>
