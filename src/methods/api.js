@@ -164,19 +164,3 @@ export const deleteDepartment = async (departmentName, { setError, setIsSubmitti
         setSuccess(null);
     }
 }
-
-// const deleteChildren = async (departmentName, { setError, setIsSubmitting, setSuccess }) => {
-//     // get children by the parent name
-//     const departments = await getChildren(departmentName, {setError});
-//     const batch = writeBatch(db);
-//     // iterate through the children and update their managedBy property
-//     departments.forEach(department => {
-//         const docRef = doc(db, 'departments', department.id);
-//         batch.update(docRef, {"managedBy": newDepartmentName});
-//     })
-//     batch.commit().then(() => {
-//         setSuccess("Department updated successfully");
-//         setError(null);
-//         setIsSubmitting(false);
-//     })
-// }
